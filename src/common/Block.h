@@ -11,4 +11,6 @@ public:
     ~BlockType();
 };
 
+class BlockState; // Todo
+
 #endif

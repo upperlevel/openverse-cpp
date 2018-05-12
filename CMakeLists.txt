@@ -10,7 +10,7 @@ find_package(glfw3)
 include_directories(${OPENGL_INCLUDE_DIRS})
 include_directories(${GLEW_INCLUDE_DIRS})
 
-set(SOURCE_FILES src/launcher/Main.cpp src/common/Chunk.h src/common/Chunk.cpp src/common/Block.cpp src/common/Block.h)
+set(SOURCE_FILES src/launcher/Main.cpp src/common/Block.cpp src/common/Block.h src/common/World.cpp src/common/World.h)
 
 add_executable(openverse ${SOURCE_FILES})
 target_link_libraries(openverse ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES} glfw)
