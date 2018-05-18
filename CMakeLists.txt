@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Common
 add_subdirectory(common)
-target_include_directories(common PRIVATE common/include)
 
 target_include_directories(common_test PRIVATE extern/doctest/doctest)
 
