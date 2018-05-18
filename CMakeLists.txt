@@ -1,16 +1,23 @@
 cmake_minimum_required(VERSION 3.10)
-project(openverse)
+project(openverse VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(OpenGL)
-find_package(GLEW)
-find_package(glfw3)
+# Common
+add_subdirectory(common)
+target_include_directories(common PRIVATE common/include)
 
-include_directories(${OPENGL_INCLUDE_DIRS})
-include_directories(${GLEW_INCLUDE_DIRS})
+target_include_directories(common_test PRIVATE extern/doctest/doctest)
 
-set(SOURCE_FILES src/launcher/Main.cpp src/common/Block.cpp src/common/Block.h src/common/World.cpp src/common/World.h)
+# Server
+add_subdirectory(server)
+target_include_directories(server PRIVATE common/include)
 
-add_executable(openverse ${SOURCE_FILES})
-target_link_libraries(openverse ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES} glfw)
+target_include_directories(server_test PRIVATE extern/doctest/doctest)
+
+# Client
+add_subdirectory(client)
+target_include_directories(client PRIVATE common/include)
+
+target_include_directories(client_test PRIVATE extern/doctest/doctest)
+

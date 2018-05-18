@@ -1,12 +1,14 @@
-#include "World.h"
+#include "world.h"
+
+#define AIR_STATE nullptr // Todo: implement
 
 // ------------------------------------------------------------------------ ArrayBlockStatePalette
 
-ArrayBlockStatePalette::ArrayBlockStatePalette(unsigned bits, std::function<int(int, BlockState *)> on_overflow) {
+ArrayBlockStatePalette::ArrayBlockStatePalette(unsigned bits, std::function<int(unsigned, BlockState *)> on_overflow) {
     this->id_length = bits;
     this->used = 0;
-    this->array_ptr = new BlockState *[1 << bits];
-    this->on_overflow = on_overflow;
+    this->array = std::make_unique<BlockState **>(new BlockState *[1 << bits]);
+    // this->on_overflow = on_overflow;
 }
 
 ArrayBlockStatePalette::~ArrayBlockStatePalette() = default;
@@ -17,12 +19,12 @@ unsigned ArrayBlockStatePalette::get_id_length() {
 
 int ArrayBlockStatePalette::to_id(BlockState *block_state) {
     for (int i = 0; i < used; i++) {
-        if (array_ptr.get()[i] == block_state) {
+        if ((*array)[i] == block_state) {
             return i;
         }
     }
-    if (used < sizeof(array_ptr.get())) {
-        array_ptr.get()[used] = block_state;
+    if (used < sizeof(array.get())) {
+        (*array)[used] = block_state;
         return used++;
     } else {
         return on_overflow(id_length + 1, block_state);
@@ -30,78 +32,7 @@ int ArrayBlockStatePalette::to_id(BlockState *block_state) {
 }
 
 BlockState *ArrayBlockStatePalette::to_blockstate(unsigned int id) {
-    return id >= 0 && id < sizeof(array_ptr.get()) ? array_ptr.get()[id] : nullptr;
-}
-
-// ------------------------------------------------------------------------ VariableBitArray
-
-int round_up(unsigned value, unsigned interval) {
-    if (value == 0) {
-        return interval;
-    }
-    int i = value & interval;
-    return i == 0 ? value : value + interval - i;
-}
-
-void VariableBitArray::check_index(int index) {
-    if (index > capacity) {
-        throw std::out_of_range("given index is out of range ");
-    }
-}
-
-VariableBitArray::VariableBitArray(unsigned entry_bits, unsigned capacity) {
-    this->entry_bits = entry_bits;
-    this->capacity = capacity;
-    this->array_ptr = new unsigned long[round_up(entry_bits * capacity, ENTRY_LENGTH) / ENTRY_LENGTH];
-    this->max_value_mask = (1ul << entry_bits) - 1; // ul = unsigned long
-}
-
-VariableBitArray::~VariableBitArray() = default;
-
-unsigned VariableBitArray::get_entry_bits() {
-    return entry_bits;
-}
-
-unsigned VariableBitArray::get_capacity() {
-    return capacity;
-}
-
-unsigned long *VariableBitArray::get_array() {
-    return array_ptr.get();
-}
-
-unsigned long VariableBitArray::get_max_value() {
-    return max_value_mask;
-}
-
-unsigned VariableBitArray::get(unsigned index) {
-    check_index(index);
-    unsigned bit_index = index * entry_bits;
-    unsigned real_index = bit_index / ENTRY_LENGTH;
-    unsigned bit_offset = bit_index % ENTRY_LENGTH;
-
-    unsigned written = ENTRY_LENGTH - bit_offset;
-    if (written >= entry_bits) {
-        return (unsigned) ((array_ptr.get()[real_index] >> bit_offset) & max_value_mask);
-    } else {
-        return (unsigned) (((array_ptr.get()[real_index] >> bit_offset) | (array_ptr.get()[real_index + 1] << written)) & max_value_mask);
-    }
-}
-
-void VariableBitArray::set(unsigned index, unsigned value) {
-    check_index(index);
-    unsigned bit_index = index * entry_bits;
-    unsigned real_index = bit_index / ENTRY_LENGTH;
-    unsigned bit_offset = bit_index % ENTRY_LENGTH;
-
-    auto array = array_ptr.get();
-    array[real_index] = array[real_index] & ~(max_value_mask << bit_offset) | (value & max_value_mask) << bit_offset;
-
-    unsigned written = ENTRY_LENGTH - bit_offset;
-    if (written < entry_bits) {
-        unsigned i = real_index + 1;
-        array[i] = array[i] & ~(max_value_mask >> written) | (value & max_value_mask) >> written;
-    }
+    return id >= 0 && id < sizeof(*array) ? (*array)[id] : nullptr;
 }
 
 // ------------------------------------------------------------------------ BlockStateStorage
@@ -114,7 +45,20 @@ BlockStateStorage::~BlockStateStorage() = default;
 
 void BlockStateStorage::set_bits_per_palette(unsigned bits) {
     if (bits <= 4) {
-        palette = new ArrayBlockStatePalette(bits, this);
+        palette = std::make_unique<ArrayBlockStatePalette>(bits, [this](unsigned bits_needed, BlockState *overflowed) {
+            VariableBitArray *old_ids = this->storage.get();
+            BlockStatePalette *old_palette = this->palette.get();
+            this->set_bits_per_palette(bits_needed);
+
+            for (unsigned i = 0; i < old_ids->get_capacity(); i++) {
+                BlockState *block_state = old_palette->to_blockstate(old_ids->get(i));
+                if (block_state) {
+                    this->set(i, block_state);
+                }
+            }
+
+            return palette->to_id(overflowed);
+        });
     } else if (bits <= 8) {
         palette = nullptr; // Todo: HashBlockStatePalette
     } else {
@@ -122,7 +66,7 @@ void BlockStateStorage::set_bits_per_palette(unsigned bits) {
     }
     palette->to_id(AIR_STATE);
     palette_bits = palette->get_id_length();
-    storage = new VariableBitArray(palette_bits, 16 * 16 * 16);
+    storage = std::make_unique<VariableBitArray>(palette_bits, 16 * 16 * 16);
 }
 
 unsigned BlockStateStorage::get_index(unsigned x, unsigned y, unsigned z) {
@@ -198,7 +142,7 @@ void ChunkProvider::unload(Chunk *chunk) {
 // ------------------------------------------------------------------------ ChunkPillar
 
 ChunkPillar::ChunkPillar(int x, int z) {
-    this->chunk_provider = new ChunkProvider();
+    this->chunk_provider = std::make_unique<ChunkProvider>();
     this->x = x;
     this->z = z;
 }
@@ -259,7 +203,7 @@ void ChunkPillarProvider::unload(int x, int z) {
 
 World::World(const std::string name) {
     this->name = name;
-    this->chunkpillar_provider = new ChunkPillarProvider();
+    this->chunkpillar_provider = std::make_unique<ChunkPillarProvider>();
 }
 
 World::~World() = default;

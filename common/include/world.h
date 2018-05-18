@@ -1,10 +1,10 @@
-#ifndef OPENVERSE_BLOCKSTATESTORAGE_H
-#define OPENVERSE_BLOCKSTATESTORAGE_H
+#pragma once
 
 #include <memory>
 #include <functional>
 
-#include "Block.h"
+#include "util.h"
+#include "block.h"
 
 // ------------------------------------------------------------------------ BlockStatePalette
 
@@ -22,11 +22,11 @@ class ArrayBlockStatePalette : public BlockStatePalette {
 private:
     unsigned id_length;
     unsigned used;
-    std::unique_ptr<BlockState *[]> array_ptr;
-    std::function<int(int, BlockState *)> on_overflow;
+    std::unique_ptr<BlockState **> array;
+    std::function<int(unsigned, BlockState *)> on_overflow;
 
 public:
-    explicit ArrayBlockStatePalette(unsigned bits, std::function<int(int, BlockState *)>);
+    explicit ArrayBlockStatePalette(unsigned bits, std::function<int(unsigned, BlockState *)>);
     ~ArrayBlockStatePalette();
 
     unsigned get_id_length() override;
@@ -35,32 +35,6 @@ public:
 };
 
 // TODO: other implementations
-
-// ------------------------------------------------------------------------ VariableBitArray
-
-class VariableBitArray {
-private:
-    static const unsigned ENTRY_LENGTH = sizeof(char) * 8;
-
-    unsigned int entry_bits;
-    unsigned int capacity;
-    unsigned long max_value_mask;
-    std::unique_ptr<unsigned long[]> array_ptr;
-
-    void check_index(int index);
-
-public:
-    explicit VariableBitArray(unsigned int entry_bits, unsigned int capacity);
-    ~VariableBitArray();
-
-    unsigned get_capacity();
-    unsigned get_entry_bits();
-    unsigned long get_max_value();
-    unsigned long *get_array();
-
-    unsigned get(unsigned index);
-    void set(unsigned index, unsigned value);
-};
 
 // ------------------------------------------------------------------------ BlockStateStorage
 
@@ -170,5 +144,3 @@ public:
     void load_chunkpillar(ChunkPillar *chunkpillar);
     void unload_chunkpillar(int x, int z);
 };
-
-#endif

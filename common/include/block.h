@@ -1,5 +1,4 @@
-#ifndef OPENVERSE_BLOCK_H
-#define OPENVERSE_BLOCK_H
+#pragma once
 
 class BlockType {
 private:
@@ -12,5 +11,3 @@ public:
 };
 
 class BlockState; // Todo
-
-#endif

@@ -1,4 +1,6 @@
-#include "Block.h"
+#include "block.h"
+
+#include <math.h>
 
 BlockType::BlockType(const char *id) {
     this->id = id;
