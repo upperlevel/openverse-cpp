@@ -1,4 +1,4 @@
-set(SOURCE_FILES src/main.cpp)
+set(SOURCE_FILES include/server.h)
 add_library(server STATIC ${SOURCE_FILES})
 
 set(TEST_FILES test/main.cpp)

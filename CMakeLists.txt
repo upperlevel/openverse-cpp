@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 project(openverse VERSION 1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
 # Common
 add_subdirectory(common)
+target_include_directories(common PUBLIC common/include)
 
 target_include_directories(common_test PRIVATE extern/doctest/doctest)
 
