@@ -1,6 +1,10 @@
-set(SOURCE_FILES include/block.h src/world.cpp include/world.h include/util.h src/util.cpp include/event.h)
+file(GLOB CPP_FILES src/*.cpp)
+file(GLOB H_FILES src/*.h include/*.h)
+set(SOURCE_FILES ${CPP_FILES} ${H_FILES})
 add_library(common STATIC ${SOURCE_FILES})
 
-set(TEST_FILES test/main.cpp test/util.h test/event.h)
+file(GLOB TEST_CPP_FILES test/*.cpp)
+file(GLOB TEST_H_FILES test/*.h)
+set(TEST_FILES ${TEST_CPP_FILES} ${TEST_H_FILES})
 add_executable(common_test ${TEST_FILES})
 target_link_libraries(common_test common)
