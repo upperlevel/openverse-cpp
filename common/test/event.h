@@ -115,7 +115,7 @@ TEST_CASE("method as listener") {
 
     Listener listener;
     EventManager manager;
-    manager.subscribe<DummyEvent>(std::bind(&Listener::on_something, listener, std::placeholders::_1));
+    manager.subscribe<DummyEvent>([&](auto e) { listener.on_something(e); });
 
     manager.call(&event);
     CHECK(event.number == 123);
