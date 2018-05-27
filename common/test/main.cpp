@@ -2,4 +2,5 @@
 #include "doctest.h"
 
 #include "event.h"
+#include "network.h"
 #include "util.h"
