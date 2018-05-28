@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../include/event.h"
 #include "doctest.h"
+#include "../include/event.h"
 
 struct DummyEvent : public Event {
     int number;

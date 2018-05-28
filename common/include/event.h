@@ -25,7 +25,7 @@ public:
         if (got == events.end()) {
             events[id] = std::vector<Listener>();
         }
-        events[id].push_back([action](Event *event) { // NO: &action (why?)
+        events[id].push_back([action](Event *event) {
             action(static_cast<E *>(event));
         });
     }
