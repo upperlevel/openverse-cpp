@@ -148,7 +148,7 @@ TEST_SUITE ("Protocol") {
         };
         auto [server_socket, client_socket] = create_socket_pair(protocol);
 
-        // The method get_connection is defined only for the FackeConnection type
+        // The method get_connection is defined only for the FakeConnection type
         // (as in the normal ServerSocket we wouldn't have only one connection)
         auto server_conn = server_socket->get_connection();
         auto client_conn = client_socket->get_connection();
@@ -183,7 +183,7 @@ TEST_SUITE ("Protocol") {
         };
         auto [server_socket, client_socket] = create_socket_pair(protocol);
 
-        // The method get_connection is defined only for the FackeConnection type
+        // The method get_connection is defined only for the FakeConnection type
         // (as in the normal ServerSocket we wouldn't have only one connection)
         auto server_conn = server_socket->get_connection();
         auto client_conn = client_socket->get_connection();
