@@ -48,3 +48,42 @@ TEST_SUITE("VariableBitArray") {
         }
     }
 }
+
+TEST_SUITE("Table") {
+    TEST_CASE("General") {
+        // insert
+        Table<int, int, long> table;
+        for (int x = 0; x < 10; x++) {
+            for (int y = 0; y < 10; y++) {
+                table.insert(x, y, x + y - 100);
+            }
+        }
+        // find
+        for (int x = -5; x <= 5; x++) {
+            for (int y = -5; y <= 5; y++) {
+                if (x < 0 || y < 0) {
+                    // out of range keys, should fail
+                    CHECK(!table.find(x, y));
+                } else {
+                    CHECK(table.find(x, y));
+                }
+            }
+        }
+        // erase
+        for (int x = -5; x <= 5; x++) {
+            for (int y = -5; y <= 5; y++) {
+                if (x < 0 || y < 0) {
+                    // should not find those
+                    CHECK(!table.erase(x, y));
+                } else {
+                    CHECK(table.erase(x, y));
+                }
+
+            }
+        }
+        // insert
+        CHECK(!table.find(0, 0)); // searches an erased element
+        table.insert(0, 0, 123);
+        CHECK(table.find(0, 0)); // now should find it
+    }
+}
