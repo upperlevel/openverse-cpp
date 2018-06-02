@@ -8,7 +8,7 @@ Protocol::Protocol(std::initializer_list<std::pair<ProtocolSide, std::shared_ptr
     }
 }
 
-Connection::Connection(ProtocolSide side, const Protocol &protocol) : side(side) {
+Socket::Socket(ProtocolSide side, const Protocol &protocol) : side(side) {
     global_id_to_local_id_map.reserve(protocol.packet_types.size());
     PacketId nextSendId = 0;
     for (auto& sideAndType : protocol.packet_types) {
@@ -26,7 +26,7 @@ Connection::Connection(ProtocolSide side, const Protocol &protocol) : side(side)
     }
 }
 
-std::tuple<std::shared_ptr<PacketType>, shared_any_ptr, PacketHandler> Connection::deserialize_packet(std::istream &data) {
+std::tuple<std::shared_ptr<PacketType>, shared_any_ptr, PacketHandler> Socket::deserialize_packet(std::istream &data) {
     PacketId id;
     buf_read(data, id);
     if (id >= receive_id_to_type_map.size()) {
@@ -37,7 +37,7 @@ std::tuple<std::shared_ptr<PacketType>, shared_any_ptr, PacketHandler> Connectio
     return {type_and_handler.first, ptr, type_and_handler.second};
 }
 
-void Connection::serialize_packet(PacketType &type, shared_any_ptr packet, std::ostream &out) {
+void Socket::serialize_packet(PacketType &type, shared_any_ptr packet, std::ostream &out) {
     if (type.get_id() >= global_id_to_local_id_map.size()) {
         throw std::runtime_error("Invalid packet type: " + type.get_id());
     }
@@ -45,12 +45,7 @@ void Connection::serialize_packet(PacketType &type, shared_any_ptr packet, std::
     type.serialize(std::move(packet), out);
 }
 
-void Connection::on_receive_packet(std::istream &data) {
-    auto [packet_type, packet_ptr, packet_handler] = deserialize_packet(data);
-    packet_handler(packet_ptr);
-}
-
-std::optional<PacketId> Connection::search_type_local_id(PacketType& type) {
+std::optional<PacketId> Socket::search_type_local_id(PacketType& type) {
     PacketId target_id = type.get_id();
     // Binary search
 
@@ -72,7 +67,7 @@ std::optional<PacketId> Connection::search_type_local_id(PacketType& type) {
     return std::nullopt;
 }
 
-void Connection::set_handler(PacketType& type, PacketHandler handler) {
+void Socket::set_handler(PacketType& type, PacketHandler handler) {
     auto local_id = search_type_local_id(type);
     if (!local_id) {
         throw std::runtime_error("Invalid type");
@@ -85,9 +80,14 @@ void Connection::set_handler(PacketType& type, PacketHandler handler) {
     receive_id_to_type_map[*local_id].second = std::move(handler);
 }
 
+void Connection::on_receive_packet(std::istream &data) {
+    auto [packet_type, packet_ptr, packet_handler] = socket.deserialize_packet(data);
+    packet_handler(*this, packet_ptr);
+}
+
 // ---------------------------------------------------------------- FakeNetwork ----------------------------------------------------------------
 
-std::pair<std::unique_ptr<FakeSocket>, std::unique_ptr<FakeSocket>> create_socket_pair(const Protocol& protocol) {
+std::pair<std::unique_ptr<FakeSocket>, std::unique_ptr<FakeSocket>> create_socket_pair(Protocol& protocol) {
     std::unique_ptr<FakeSocket> server = std::make_unique<FakeSocket>(ProtocolSide::SERVER, protocol);
     std::unique_ptr<FakeSocket> client = std::make_unique<FakeSocket>(ProtocolSide::CLIENT, protocol);
     server->get_connection()->receiver = client->get_connection();
@@ -96,8 +96,8 @@ std::pair<std::unique_ptr<FakeSocket>, std::unique_ptr<FakeSocket>> create_socke
 }
 
 void FakeConnection::on_receive_packet(PacketId local_id, shared_any_ptr& packet) {
-    auto [packet_type, packet_handler] = receive_id_to_type_map[local_id];
-    packet_handler(packet);
+    auto [packet_type, packet_handler] = socket.receive_id_to_type_map[local_id];
+    packet_handler(*this, packet);
 }
 
 void FakeConnection::send(PacketType& type, shared_any_ptr packet) {
@@ -105,7 +105,7 @@ void FakeConnection::send(PacketType& type, shared_any_ptr packet) {
     if (!ptr) {
         throw std::runtime_error("Connection closed");
     }
-    auto send_id = global_id_to_local_id_map[type.get_id()];
+    auto send_id =  socket.global_id_to_local_id_map[type.get_id()];
 #ifndef NDEBUG
     if (send_id == MAX_PACKET_ID) {
         throw std::runtime_error("Cannot send packet: Protocol Error");

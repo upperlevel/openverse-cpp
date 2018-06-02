@@ -5,13 +5,15 @@
 #include <vector>
 #include <functional>
 
+class Connection;
+
 using PacketId = uint16_t;
 
 using byte = unsigned char;
 
 using shared_any_ptr = std::shared_ptr<void>;
 
-using PacketHandler = std::function<void (shared_any_ptr)>;
+using PacketHandler = std::function<void (Connection&, shared_any_ptr)>;
 
 // The last packet id
 constexpr auto MAX_PACKET_ID = static_cast<PacketId>(-1);
@@ -125,37 +127,45 @@ public:
     Protocol(std::initializer_list<std::pair<ProtocolSide, std::shared_ptr<PacketType>>> types);
 };
 
+class Socket;
 /**
  * A class that describes a point to point connection
  */
 class Connection {
 protected:
-    std::vector<PacketId> global_id_to_local_id_map;
-    std::vector<std::pair<std::shared_ptr<PacketType>, PacketHandler>> receive_id_to_type_map;
-
-    std::optional<PacketId> search_type_local_id(PacketType& type);
+    Socket& socket;
 
 public:
-    const ProtocolSide side;
+    explicit Connection(Socket &socket) : socket(socket) {};
 
     Connection(const Connection&) = delete;
 
-    Connection(ProtocolSide side, const Protocol& protocol);
+    void on_receive_packet(std::istream &data);
+
+    virtual void send(PacketType& type, shared_any_ptr packet) = 0;
+};
+
+class Socket {
+public:
+    std::vector<std::pair<std::shared_ptr<PacketType>, PacketHandler>> receive_id_to_type_map;
+    std::vector<PacketId> global_id_to_local_id_map;
+
+    std::optional<PacketId> search_type_local_id(PacketType& type);
+
+    const ProtocolSide side;
+
+
+    Socket(ProtocolSide side, const Protocol& protocol);
 
     std::tuple<std::shared_ptr<PacketType>, shared_any_ptr, PacketHandler> deserialize_packet(std::istream &data);
 
     void serialize_packet(PacketType& type, shared_any_ptr packet, std::ostream& out);
 
-    void on_receive_packet(std::istream &data);
-
-    virtual void send(PacketType& type, shared_any_ptr packet) = 0;
+    virtual const std::vector<std::shared_ptr<Connection>>& get_connections() = 0;
 
     void set_handler(PacketType& type, PacketHandler handler);
-};
 
-class Socket {
-public:
-    virtual const std::vector<std::shared_ptr<Connection>>& get_connections() = 0;
+    void on_receive_packet(Connection& connection, std::istream &data);
 };
 
 // Fake implementations
@@ -166,17 +176,18 @@ private:
 public:
     std::weak_ptr<FakeConnection> receiver{};
 
-    FakeConnection(ProtocolSide side, const Protocol &protocol) : Connection(side, protocol){};
+    explicit FakeConnection(Socket& socket) : Connection(socket){};
 
     void send(PacketType& type, shared_any_ptr packet) override;
 };
 
 class FakeSocket : public Socket {
+private:
     std::shared_ptr<FakeConnection> connection;
     std::vector<std::shared_ptr<Connection>> connections {connection};
 public:
-    FakeSocket(ProtocolSide side, const Protocol &protocol) {
-        connection = std::make_shared<FakeConnection>(side, protocol);
+    FakeSocket(ProtocolSide side, Protocol &protocol) : Socket(side, protocol) {
+        connection = std::make_shared<FakeConnection>(*this);
     };
 
     const std::vector<std::shared_ptr<Connection>>& get_connections() override {
@@ -188,5 +199,5 @@ public:
     }
 };
 
-std::pair<std::unique_ptr<FakeSocket>, std::unique_ptr<FakeSocket>> create_socket_pair(const Protocol& protocol);
+std::pair<std::unique_ptr<FakeSocket>, std::unique_ptr<FakeSocket>> create_socket_pair(Protocol& protocol);
 

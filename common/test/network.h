@@ -54,7 +54,7 @@ TEST_SUITE ("Protocol") {
         Protocol protocol {
                 { ProtocolSide::EITHER, dummy_packet_type },
         };
-        FakeConnection connection {ProtocolSide::CLIENT, protocol};
+        FakeSocket socket {ProtocolSide::CLIENT, protocol};
 
         auto packet = std::make_shared<DummyPacket>(42, 666);
 
@@ -62,7 +62,7 @@ TEST_SUITE ("Protocol") {
         std::istream in(&buffer);
         std::ostream out(&buffer);
 
-        connection.serialize_packet(*dummy_packet_type, packet, out);
+        socket.serialize_packet(*dummy_packet_type, packet, out);
 
         CHECK(buffer.str() == std::string{
             0x00, 0x00,
@@ -70,7 +70,7 @@ TEST_SUITE ("Protocol") {
             0x00, 0x00, 0x02, (char)0x9a,
         });
 
-        auto [packet_type, deserialized_packet, packet_handler] = connection.deserialize_packet(in);
+        auto [packet_type, deserialized_packet, packet_handler] = socket.deserialize_packet(in);
 
         CHECK(packet_type == dummy_packet_type);
         auto pkt = std::static_pointer_cast<DummyPacket>(deserialized_packet);
@@ -89,8 +89,8 @@ TEST_SUITE ("Protocol") {
                 { ProtocolSide::SERVER, packet_type3 }, // 2      -      1
                 { ProtocolSide::CLIENT, packet_type4 }, // 3      2      -
         };
-        FakeConnection client_conn{ProtocolSide::CLIENT, protocol};
-        FakeConnection server_conn{ProtocolSide::SERVER, protocol};
+        FakeSocket client{ProtocolSide::CLIENT, protocol};
+        FakeSocket server{ProtocolSide::SERVER, protocol};
 
         {// Test client
 
@@ -100,7 +100,7 @@ TEST_SUITE ("Protocol") {
             std::istream in(&buffer);
             std::ostream out(&buffer);
 
-            client_conn.serialize_packet(*packet_type4, packet, out);
+            client.serialize_packet(*packet_type4, packet, out);
 
             CHECK(buffer.str() == bytes_to_str({
                 0x00, 0x02,
@@ -108,7 +108,7 @@ TEST_SUITE ("Protocol") {
                 0x00, 0x00, 0x00, 0x9b,
             }));
 
-            auto [packet_type, deserialized_packet, packet_handler] = server_conn.deserialize_packet(in);
+            auto [packet_type, deserialized_packet, packet_handler] = server.deserialize_packet(in);
 
             CHECK(packet_type == packet_type4);
             auto pkt = std::static_pointer_cast<DummyPacket>(deserialized_packet);
@@ -117,7 +117,7 @@ TEST_SUITE ("Protocol") {
 
             buffer.pubsetbuf(const_cast<char *>(""), 0);
 
-            client_conn.serialize_packet(*packet_type2, packet, out);
+            client.serialize_packet(*packet_type2, packet, out);
             CHECK(buffer.str() == bytes_to_str({0x00, 0x01, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00, 0x9b}));
         }
         {// Test server
@@ -128,11 +128,11 @@ TEST_SUITE ("Protocol") {
             std::istream in(&buffer);
             std::ostream out(&buffer);
 
-            server_conn.serialize_packet(*packet_type3, packet, out);
+            server.serialize_packet(*packet_type3, packet, out);
 
             CHECK(buffer.str() == bytes_to_str({0x00, 0x01, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0xa8,}));
 
-            auto [packet_type, deserialized_packet, packet_handler] = client_conn.deserialize_packet(in);
+            auto [packet_type, deserialized_packet, packet_handler] = client.deserialize_packet(in);
 
             CHECK(packet_type == packet_type3);
             auto pkt = std::static_pointer_cast<DummyPacket>(deserialized_packet);
@@ -155,7 +155,7 @@ TEST_SUITE ("Protocol") {
 
         std::shared_ptr<DummyPacket> packet_mailbox;
 
-        server_conn->set_handler(*dummy_packet_type, [&packet_mailbox](shared_any_ptr packet) -> void {
+        server_socket->set_handler(*dummy_packet_type, [&packet_mailbox](auto& connection, auto packet) -> void {
             packet_mailbox = std::static_pointer_cast<DummyPacket>(packet);
         });
 
@@ -194,8 +194,8 @@ TEST_SUITE ("Protocol") {
 
         // Setup server handlers
         for (auto& type : {packet_type1, packet_type2, packet_type4, packet_type5, packet_type6}) {
-            server_conn->set_handler(*type, [&received_side, &received_type, &received_packet, &type]
-                    (shared_any_ptr packet) -> void {
+            server_socket->set_handler(*type, [&received_side, &received_type, &received_packet, &type]
+                    (auto& conn, auto packet) -> void {
                 received_side = ProtocolSide::SERVER;
                 received_type = type;
                 received_packet = std::static_pointer_cast<DummyPacket>(packet);
@@ -204,8 +204,8 @@ TEST_SUITE ("Protocol") {
 
         // Setup client handlers
         for (auto& type : {packet_type1, packet_type3, packet_type6}) {
-            client_conn->set_handler(*type, [&received_side, &received_type, &received_packet, &type]
-                    (shared_any_ptr packet) -> void {
+            client_socket->set_handler(*type, [&received_side, &received_type, &received_packet, &type]
+                    (auto& conn, auto packet) -> void {
                 received_side = ProtocolSide::CLIENT;
                 received_type = type;
                 received_packet = std::static_pointer_cast<DummyPacket>(packet);
