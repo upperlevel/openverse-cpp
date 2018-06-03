@@ -169,6 +169,7 @@ public:
 };
 
 // Fake implementations
+class FakeSocket;
 
 class FakeConnection : public Connection {
 private:
@@ -176,7 +177,7 @@ private:
 public:
     std::weak_ptr<FakeConnection> receiver{};
 
-    explicit FakeConnection(Socket& socket) : Connection(socket){};
+    explicit FakeConnection(FakeSocket& socket);
 
     void send(PacketType& type, shared_any_ptr packet) override;
 };
@@ -184,11 +185,9 @@ public:
 class FakeSocket : public Socket {
 private:
     std::shared_ptr<FakeConnection> connection;
-    std::vector<std::shared_ptr<Connection>> connections {connection};
+    std::vector<std::shared_ptr<Connection>> connections;
 public:
-    FakeSocket(ProtocolSide side, Protocol &protocol) : Socket(side, protocol) {
-        connection = std::make_shared<FakeConnection>(*this);
-    };
+    FakeSocket(ProtocolSide side, Protocol &protocol);
 
     const std::vector<std::shared_ptr<Connection>>& get_connections() override {
         return connections;

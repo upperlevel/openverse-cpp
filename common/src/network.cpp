@@ -95,6 +95,8 @@ std::pair<std::unique_ptr<FakeSocket>, std::unique_ptr<FakeSocket>> create_socke
     return {std::move(server), std::move(client)};
 }
 
+FakeConnection::FakeConnection(FakeSocket& socket) : Connection(socket){};
+
 void FakeConnection::on_receive_packet(PacketId local_id, shared_any_ptr& packet) {
     auto [packet_type, packet_handler] = socket.receive_id_to_type_map[local_id];
     packet_handler(*this, packet);
@@ -113,3 +115,8 @@ void FakeConnection::send(PacketType& type, shared_any_ptr packet) {
 #endif // NDEBUG
     ptr->on_receive_packet(send_id, packet);
 }
+
+FakeSocket::FakeSocket(ProtocolSide side, Protocol &protocol) : Socket(side, protocol) {
+    connection = std::make_shared<FakeConnection>(*this);
+    connections = {connection};
+};
