@@ -5,12 +5,17 @@
 class BlockType;
 class BlockState;
 
+enum class BlockFace {
+    UP, DOWN, FRONT, BACK, RIGHT, LEFT;
+};
+
 class BlockType {
 private:
-    const std::string id;
-    int rawId;
+    int raw_id;
 
 public:
+    const std::string id;
+
     explicit BlockType(const std::string id);
     ~BlockType();
 
