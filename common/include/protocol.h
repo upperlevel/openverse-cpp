@@ -4,23 +4,21 @@
 
 class EchoPacketType : public PacketType {
 public:
-    shared_any_ptr deserialize(std::istream& data) override {
-        uint32_t val;
-        buf_read(data, val);
-        return std::make_shared(val);
-    }
+    shared_any_ptr deserialize(std::istream &data) override;
 
-    void serialize(const shared_any_ptr packet, std::ostream& out) override {
-        buf_write(out, std::static_pointer_cast<uint32_t>(packet));
-    }
+    void serialize(const shared_any_ptr packet, std::ostream &out) override;
+};
+
+class LoginPacketType : public PacketType {
+public:
+    shared_any_ptr deserialize(std::istream &data) override;
+
+    void serialize(const shared_any_ptr packet, std::ostream &out) override;
 };
 
 namespace PacketTypes {
-    auto ECHO = std::make_shared<EchoPacketType>();
+    extern std::shared_ptr<EchoPacketType> ECHO;
+    extern std::shared_ptr<LoginPacketType> LOGIN;
 };
 
-
-Protocol OPENVERSE_PROTOCOL {
-        { ProtocolSide::EITHER, PacketTypes::ECHO },
-};
-
+extern Protocol OPENVERSE_PROTOCOL;

@@ -8,7 +8,7 @@
 #include "network.h"
 
 using ItemId = uint32_t;
-using ItemData = std::unordered_map<std::string, std::any;
+using ItemData = std::unordered_map<std::string, std::any>;
 
 
 class Player;
@@ -17,7 +17,8 @@ class ItemStack;
 
 class ItemType {
 public:
-    static ItemType AIR {"air"};
+    // TODO: static const ItemType AIR {"air"};
+
 private:
     std::string const id;
 
@@ -43,7 +44,7 @@ public:
 
 class ItemStack {
 public:
-    static ItemStack const EMPTY {ItemType::AIR, 0, 0};
+    // TODO: static ItemStack const EMPTY {ItemType::AIR, 0, 0};
 
 private:
     ItemType& type;

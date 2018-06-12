@@ -6,7 +6,7 @@ class BlockType;
 class BlockState;
 
 enum class BlockFace {
-    UP, DOWN, FRONT, BACK, RIGHT, LEFT;
+    UP, DOWN, FRONT, BACK, RIGHT, LEFT
 };
 
 class BlockType {

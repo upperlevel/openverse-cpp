@@ -2,9 +2,9 @@
 #include <utility>
 #include <util.h>
 
-explicit ItemType::ItemType(std::string id) : id(std::move(id)){}
+ItemType::ItemType(std::string id) : id(std::move(id)) {}
 
-virtual bool ItemType::on_use_block(Player& player, ItemStack& item, Location loc, BlockFace face) {
+bool ItemType::on_use_block(Player& player, ItemStack& item, Location loc, BlockFace face) {
     return false;
 }
 
@@ -15,7 +15,7 @@ ItemStack ItemType::get_stack_with_data(uint16_t count, ItemData data) {
 }
 
 
-virtual uint16_t ItemType::get_max_stack() {
+uint16_t ItemType::get_max_stack() {
     return 64;
 }
 
@@ -28,7 +28,7 @@ void ItemType::for_every_state(std::function<void(uint8_t)> handler) {
 }
 
 
-ItemStack::ItemStack(ItemType& const type, uint16_t count, uint8_t state) : type(type), count(count), state(state) {}
+ItemStack::ItemStack(ItemType& type, uint16_t count, uint8_t state) : type(type), count(count), state(state) {}
 
 uint16_t ItemStack::get_count() {
     return count;
@@ -72,7 +72,7 @@ ItemStack ItemStack::read(std::istream in) {
 }
 
 
-explicit BlockItemType::BlockItemType(BlockType block_type) : ItemType(block_type.id), block_type(block_type){}
+BlockItemType::BlockItemType(BlockType block_type) : ItemType(block_type.id), block_type(block_type) {}
 
 bool BlockItemType::on_use_block(Player &player, ItemStack &item, Location loc, BlockFace face) {
     loc = loc.relative(face);
