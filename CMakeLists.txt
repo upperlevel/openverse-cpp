@@ -10,8 +10,8 @@ target_include_directories(common_test PRIVATE extern/doctest/doctest)
 
 # Server
 add_subdirectory(server)
-target_include_directories(server PRIVATE common/include)
-#target_include_directories(server_test PRIVATE extern/doctest/doctest)
+target_include_directories(server PRIVATE server/include common/include)
+target_include_directories(server_test PRIVATE extern/doctest/doctest)
 
 # Client
 add_subdirectory(client)

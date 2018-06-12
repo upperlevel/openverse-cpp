@@ -4,9 +4,7 @@
 #define DEBUG
 #include <iostream>
 
-Openverse::Server::Server(Socket& socket) {
-    this->socket = &socket;
-}
+Openverse::Server::Server(Socket& socket) : socket(socket) {}
 
 void Openverse::Server::start() {
     // Todo load resources
@@ -14,9 +12,7 @@ void Openverse::Server::start() {
 
     // Login listener
     std::string login_packet;
-    socket->set_handler(*PacketTypes::LOGIN, [&login_packet](auto &connection, auto packet) -> void {
-#ifdef DEBUG
+    socket.set_handler(*PacketTypes::LOGIN, [&login_packet](auto &connection, auto packet) -> void {
         std::cout << "Player logged in: " << login_packet << std::endl;
-#endif
     });
 }

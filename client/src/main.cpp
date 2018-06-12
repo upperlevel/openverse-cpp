@@ -5,7 +5,6 @@
 #include "protocol.h"
 #include "server.h"
 
-// Graphics
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>

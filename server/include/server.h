@@ -5,7 +5,7 @@
 namespace Openverse {
     class Server {
     private:
-        std::unique_ptr<Socket> socket;
+        Socket& socket;
 
     public:
         /**
@@ -17,6 +17,5 @@ namespace Openverse {
          * Loads resources and starts listening for incoming connections.
          */
         void start();
-        void stop();
     };
 }
