@@ -49,6 +49,11 @@ inline void buf_write(std::ostream& out, T val) {
     out.write(reinterpret_cast<char*>(&val), sizeof(T));
 }
 
+/**
+ * Writes and adapt endianness of each char of the given string.
+ * Stops writing when reaches the string end-char.
+ */
+void buf_write_string(std::ostream& out, std::string string);
 
 // network to host functions, they're used to convert an integer from the network byte order (big endian)
 // to the host byte order.
@@ -80,6 +85,8 @@ inline void buf_read(std::istream& in, T& val) {
     in.read(reinterpret_cast<char*>(&val), sizeof(T));
     val = ntoh(val);
 }
+
+std::string buf_read_string(std::istream& in);
 
 /**
  * This class defines a type of packet, any instance will be used to describe a different type of packet.

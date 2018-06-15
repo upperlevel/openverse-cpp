@@ -1,11 +1,13 @@
 #pragma once
 
 #include "network.h"
+#include "player.h"
 
 namespace Openverse {
     class Server {
     private:
-        Socket& socket;
+        std::unique_ptr<Socket> socket;
+        std::vector<std::shared_ptr<Player>> players;
 
     public:
         /**

@@ -1,5 +1,24 @@
 #include "network.h"
 
+void buf_write_string(std::ostream& out, std::string string) {
+    for (char c : string) {
+        buf_write(out, (uint8_t) c);
+    }
+    buf_write(out, (uint8_t) '\0');
+}
+
+std::string buf_read_string(std::istream& in) {
+    std::string res;
+    while (true) {
+        uint8_t c;
+        buf_read(in, c);
+        res += (char) c;
+        if (c == '\0') {
+            break;
+        }
+    }
+    return res;
+}
 
 Protocol::Protocol(std::initializer_list<std::pair<ProtocolSide, std::shared_ptr<PacketType>>> types) : packet_types(types) {
     PacketId nextId = 0;
