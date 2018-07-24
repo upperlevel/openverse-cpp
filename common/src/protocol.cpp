@@ -54,7 +54,52 @@ void PlayerChangeWorldPacketType::serialize(const shared_any_ptr packet, std::os
     buf_write_string(out, *std::static_pointer_cast<std::string>(packet));
 }
 
+// -------------------------------------------------------------------------------------------------------------------------------- ChunkCreatePacketType
+
+std::shared_ptr<ChunkCreatePacketType> PacketTypes::CHUNK_CREATE = std::make_shared<ChunkCreatePacketType>();
+
+shared_any_ptr ChunkCreatePacketType::deserialize(std::istream &in) {
+    ChunkCreatePacket packet;
+    buf_read(in, packet.chunk_x);
+    buf_read(in, packet.chunk_y);
+    buf_read(in, packet.chunk_z);
+    for (int i = 0; i < sizeof(packet.block_states); i++) {
+        buf_read(in, packet.block_states[i]);
+    }
+    return std::make_shared(packet); // Copy packet instance?
+}
+
+void ChunkCreatePacketType::serialize(const shared_any_ptr packet, std::ostream &out) {
+    ChunkCreatePacket raw_packet = *std::static_pointer_cast<ChunkCreatePacket>(packet);
+    buf_write(out, raw_packet.chunk_x);
+    buf_write(out, raw_packet.chunk_y);
+    buf_write(out, raw_packet.chunk_z);
+    for (int i = 0; i < sizeof(raw_packet.block_states); i++) {
+        buf_write(out, raw_packet.block_states[i]);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------- ChunkDestroyPacketType
+
+std::shared_ptr<ChunkDestroyPacketType> PacketTypes::CHUNK_DESTROY = std::make_shared<ChunkDestroyPacketType>();
+
+shared_any_ptr ChunkDestroyPacketType::deserialize(std::istream &in) {
+    ChunkDestroyPacket packet;
+    buf_read(in, packet.chunk_x);
+    buf_read(in, packet.chunk_y);
+    buf_read(in, packet.chunk_z);
+    return std::make_shared(packet);
+}
+
+void ChunkDestroyPacketType::serialize(const shared_any_ptr packet, std::ostream &out) {
+    ChunkDestroyPacket raw_packet = *std::static_pointer_cast<ChunkDestroyPacket>(packet);
+    buf_write(out, raw_packet.chunk_x);
+    buf_write(out, raw_packet.chunk_y);
+    buf_write(out, raw_packet.chunk_z);
+}
+
 // -------------------------------------------------------------------------------------------------------------------------------- OpenverseProtocol
+
 Protocol OPENVERSE_PROTOCOL = {
         { ProtocolSide::EITHER, PacketTypes::ECHO },
         { ProtocolSide::CLIENT, PacketTypes::LOGIN },

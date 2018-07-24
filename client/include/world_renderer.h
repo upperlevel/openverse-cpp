@@ -3,14 +3,19 @@
 #include <string>
 
 #include "world.h"
+#include "chunk.h"
 #include "network.h"
 
+// ---------------------------------------------------------------- WorldPacketListener
 
-class ClientWorld : public World {
-private:
-    // The socket to use to register chunk packets listeners.
-    std::weak_ptr<Socket> socket;
-
+/**
+ * Listens for world packets and updates the world.
+ */
+class WorldPacketListener {
 public:
-    ClientWorld(std::string name, std::shared_ptr<Socket> socket);
+    WorldPacketListener(World &world, Socket& socket);
 };
+
+// ---------------------------------------------------------------- WorldPacketListener
+
+
